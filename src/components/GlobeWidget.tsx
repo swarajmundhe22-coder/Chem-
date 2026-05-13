@@ -6,7 +6,7 @@ import {
   geoOrthographic,
   geoPath,
 } from 'd3-geo';
-import { interpolateNumber, interpolateRgb } from 'd3-interpolate';
+import { interpolateNumber } from 'd3-interpolate';
 import { KEY_COUNTRY_CODES, fetchCountryMetrics, type CountryMetric } from '../lib/globeData';
 
 interface GlobeWidgetProps {
@@ -62,11 +62,6 @@ const BASE_VALUES: Record<RegionCode, number> = {
 
 const isRegionCode = (code: string): code is RegionCode =>
   code === 'GBR' || code === 'IND' || code === 'USA' || code === 'JPN' || code === 'FRA';
-
-const metricColor = (value: number): string => {
-  const normalized = Math.max(0, Math.min(1, value / 100));
-  return interpolateRgb('#11203f', '#5ca6ff')(normalized);
-};
 
 const toMetricsMap = (rows: CountryMetric[]): Record<RegionCode, { name: string; value: number }> => {
   const next: Record<RegionCode, { name: string; value: number }> = {
@@ -180,12 +175,9 @@ const GlobeWidget = ({ className, visualRegressionMode }: GlobeWidgetProps) => {
       return;
     }
 
-    let last = performance.now();
     let frameId = 0;
 
-    const tick = (time: number) => {
-      const delta = time - last;
-      last = time;
+    const tick = () => {
       setRotation((current) => {
         const diff = targetRotation - current;
         if (Math.abs(diff) < 0.1) {
@@ -302,10 +294,6 @@ const GlobeWidget = ({ className, visualRegressionMode }: GlobeWidgetProps) => {
   }, [projection, selectedCode]);
 
 
-  const effectiveValues = visualRegressionMode ? BASE_VALUES : displayValues;   
-
-  const selectedDisplayValue = Math.round(effectiveValues[selectedCode]);       
-
   return (
     <div className={`globe-widget ${className || ''}`.trim()}>
       <div className="globe-stage">
@@ -370,7 +358,6 @@ const GlobeWidget = ({ className, visualRegressionMode }: GlobeWidgetProps) => {
         ))}
 
         {visiblePoints.map((point) => {
-          const value = Math.round(effectiveValues[point.code]);
           const isActive = selectedCode === point.code;
           const labelPos = calculateLabelPosition(point);
 

@@ -409,6 +409,77 @@ void setBootstrapAdmin();
 
 export const registerFailedLoginAttempt = (ipAddress) => recordFailedAttempt(ipAddress);
 
+/**
+ * Create or update a user from Google OAuth
+ */
+export const upsertGoogleUser = ({ googleId, email, name, picture }) => {
+  const normalizedEmail = normalizeEmail(email);
+  let user = usersByEmail.get(normalizedEmail);
+
+  if (user) {
+    // Update existing user with Google data
+    if (!user.googleId) {
+      user.googleId = googleId;
+    }
+    if (picture && !user.picture) {
+      user.picture = picture;
+    }
+    return user;
+  }
+
+  // Create new user from Google
+  user = {
+    id: crypto.randomUUID(),
+    email: normalizedEmail,
+    name: name || normalizedEmail.split('@')[0],
+    googleId: googleId,
+    picture: picture || null,
+    role: 'viewer',
+    passwordHash: null,
+    mfaEnabled: false,
+    mfaSecret: null,
+    pendingMfaSecret: null,
+    createdAt: new Date().toISOString(),
+    lastLoginAt: null,
+  };
+
+  usersByEmail.set(user.email, user);
+  usersById.set(user.id, user);
+  return user;
+};
+
+/**
+ * Enhanced issueSessionTokens that supports direct parameters
+ */
+export const issueSessionTokensEnhanced = async (params) => {
+  // Support both old format (user object) and new format (individual params)
+  const user = params.user || {
+    id: params.userId,
+    email: params.email,
+    role: params.role || 'viewer',
+  };
+
+  if (params.user) {
+    params.user.lastLoginAt = new Date().toISOString();
+  } else {
+    // Update user in memory if we have the full user object
+    const existingUser = usersById.get(user.id);
+    if (existingUser) {
+      existingUser.lastLoginAt = new Date().toISOString();
+    }
+  }
+
+  return createSession({
+    user,
+    ipAddress: params.ipAddress,
+    userAgent: params.userAgent,
+    previousSessionId: params.previousSessionId || null,
+  });
+};
+
+// Keep original for backward compatibility
+const originalIssueSessionTokens = issueSessionTokens;
+
 export const getAuthTelemetrySnapshot = () => ({
   registeredUsers: usersByEmail.size,
   activeRefreshSessions: refreshSessionsByHash.size,

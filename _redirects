@@ -1,0 +1,28 @@
+# Cloudflare Pages Redirects Configuration
+# Route all non-file, non-API routes to index.html for SPA routing
+
+# API routes - pass through as-is
+/api/* /api/:splat 200
+
+# Static assets and files with extensions pass through
+/assets/* /assets/:splat 200
+/*.js /\*.js 200
+/*.css /\*.css 200
+/*.json /\*.json 200
+/*.xml /\*.xml 200
+/*.txt /\*.txt 200
+/*.png /\*.png 200
+/*.jpg /\*.jpg 200
+/*.jpeg /\*.jpeg 200
+/*.gif /\*.gif 200
+/*.svg /\*.svg 200
+/*.webp /\*.webp 200
+/*.woff /\*.woff 200
+/*.woff2 /\*.woff2 200
+/*.ttf /\*.ttf 200
+/*.eot /\*.eot 200
+/*.mp4 /\*.mp4 200
+/*.webm /\*.webm 200
+
+# SPA fallback - rewrite all other requests to index.html
+/* /index.html 200
